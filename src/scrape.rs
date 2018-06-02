@@ -60,9 +60,9 @@ pub fn scrape_profile(username: &str) -> Result<JsonProfile, ()> {
     parse_profile_json(&json_text)
 }
 
-
-mod test {
-    use scrape;
+#[cfg(test)]
+mod tests {
+    use super::*;
 
     #[test]
     fn test_extract_instagram_json_text() {
@@ -70,7 +70,7 @@ mod test {
             let nominal_body = r#"<test>
                     window._sharedData = {"username": "peterdn"}
                     </test>"#;
-            let nominal_json_text = scrape::extract_instagram_json_text(&nominal_body);
+            let nominal_json_text = extract_instagram_json_text(&nominal_body);
             assert_eq!(nominal_json_text, Ok(r#"{"username": "peterdn"}"#.to_string()));
         }
 
@@ -78,7 +78,7 @@ mod test {
             let nominal_body = r#"<test>
                     window._sharedData = {"username": "peterdn", "data": {}}
                     </test>"#;
-            let nominal_json_text = scrape::extract_instagram_json_text(&nominal_body);
+            let nominal_json_text = extract_instagram_json_text(&nominal_body);
             assert_eq!(nominal_json_text, Ok(r#"{"username": "peterdn", "data": {}}"#.to_string()));
         }
 
@@ -86,7 +86,7 @@ mod test {
             let invalid_body = r#"<test>
                     window._sharedData = notrealjson
                     </test>"#;
-            let invalid_json_text = scrape::extract_instagram_json_text(&invalid_body);
+            let invalid_json_text = extract_instagram_json_text(&invalid_body);
             assert_eq!(invalid_json_text, Err(()));
         }
 
@@ -94,7 +94,7 @@ mod test {
             let invalid_body = r#"<test>
                     x = y
                     </test>"#;
-            let invalid_json_text = scrape::extract_instagram_json_text(&invalid_body);
+            let invalid_json_text = extract_instagram_json_text(&invalid_body);
             assert_eq!(invalid_json_text, Err(()));
         }
 
@@ -102,7 +102,7 @@ mod test {
             let invalid_body = r#"<test>
                     window._badData = {"username": "peterdn"}
                     </test>"#;
-            let invalid_json_text = scrape::extract_instagram_json_text(&invalid_body);
+            let invalid_json_text = extract_instagram_json_text(&invalid_body);
             assert_eq!(invalid_json_text, Err(()));
         }
     }
@@ -132,18 +132,18 @@ mod test {
                     }]
                 }
             }"#;
-            let nominal_profile_value = scrape::parse_profile_json(&nominal_json.to_string());
-            assert_eq!(nominal_profile_value, Ok(scrape::JsonProfile {
+            let nominal_profile_value = parse_profile_json(&nominal_json.to_string());
+            assert_eq!(nominal_profile_value, Ok(JsonProfile {
                 username: Some("peterdn".to_string()),
                 full_name: Some("Peter Nelson".to_string()),
                 biography: Some("test biography".to_string()),
                 external_url: Some("https://peterdn.com".to_string()),
                 profile_pic_url_hd: Some("https://peterdn.com/profile.jpg".to_string()),
-                edge_owner_to_timeline_media: scrape::JsonEdgeOwnerToTimelineMedia {
-                    edges: vec![scrape::JsonEdge {
-                        node: scrape::JsonNode {display_url: "https://peterdn.com/1.jpg".to_string()}
-                    }, scrape::JsonEdge {
-                        node: scrape::JsonNode {display_url: "https://peterdn.com/2.jpg".to_string()}
+                edge_owner_to_timeline_media: JsonEdgeOwnerToTimelineMedia {
+                    edges: vec![JsonEdge {
+                        node: JsonNode {display_url: "https://peterdn.com/1.jpg".to_string()}
+                    }, JsonEdge {
+                        node: JsonNode {display_url: "https://peterdn.com/2.jpg".to_string()}
                     }]
                 }
             }));
@@ -166,14 +166,14 @@ mod test {
                     }]
                 }
             }"#;
-            let empty_profile_value = scrape::parse_profile_json(&empty_json.to_string());
-            assert_eq!(empty_profile_value, Ok(scrape::JsonProfile {
+            let empty_profile_value = parse_profile_json(&empty_json.to_string());
+            assert_eq!(empty_profile_value, Ok(JsonProfile {
                 username: None,
                 full_name: None,
                 biography: None,
                 external_url: None,
                 profile_pic_url_hd: None,
-                edge_owner_to_timeline_media: scrape::JsonEdgeOwnerToTimelineMedia {
+                edge_owner_to_timeline_media: JsonEdgeOwnerToTimelineMedia {
                     edges: vec![]
                 }
             }));
@@ -188,14 +188,14 @@ mod test {
                     }}}]
                 }
             }"#;
-            let incomplete_profile_value = scrape::parse_profile_json(&incomplete_json.to_string());
-            assert_eq!(incomplete_profile_value, Ok(scrape::JsonProfile {
+            let incomplete_profile_value = parse_profile_json(&incomplete_json.to_string());
+            assert_eq!(incomplete_profile_value, Ok(JsonProfile {
                 username: None,
                 full_name: None,
                 biography: None,
                 external_url: None,
                 profile_pic_url_hd: None,
-                edge_owner_to_timeline_media: scrape::JsonEdgeOwnerToTimelineMedia {
+                edge_owner_to_timeline_media: JsonEdgeOwnerToTimelineMedia {
                     edges: vec![]
                 }
             }));
@@ -210,7 +210,7 @@ mod test {
                     }}}]
                 }
             }"#;
-            let incomplete_profile_value = scrape::parse_profile_json(&incomplete_json.to_string());
+            let incomplete_profile_value = parse_profile_json(&incomplete_json.to_string());
             assert_eq!(incomplete_profile_value, Err(()));
         }
     }

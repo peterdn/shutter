@@ -36,36 +36,37 @@ impl Profile {
     }
 }
 
-mod test {
-    use image;
-    use profile;
-    use scrape;
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use image::*;
+    use scrape::*;
 
     #[test]
     fn test_from_json_profile() {
-        let json_profile = scrape::JsonProfile {
+        let json_profile = JsonProfile {
             username: Some("peterdn".to_string()),
             full_name: Some("Peter Nelson".to_string()),
             biography: Some("test biography".to_string()),
             external_url: Some("https://peterdn.com".to_string()),
             profile_pic_url_hd: Some("https://peterdn.com/profile.jpg".to_string()),
-            edge_owner_to_timeline_media: scrape::JsonEdgeOwnerToTimelineMedia {
-                edges: vec![scrape::JsonEdge {
-                    node: scrape::JsonNode {display_url: "https://peterdn.com/1.jpg".to_string()}
-                }, scrape::JsonEdge {
-                    node: scrape::JsonNode {display_url: "https://peterdn.com/2.jpg".to_string()}
+            edge_owner_to_timeline_media: JsonEdgeOwnerToTimelineMedia {
+                edges: vec![JsonEdge {
+                    node: JsonNode {display_url: "https://peterdn.com/1.jpg".to_string()}
+                }, JsonEdge {
+                    node: JsonNode {display_url: "https://peterdn.com/2.jpg".to_string()}
                 }]
             }
         };
-        assert_eq!(profile::Profile::from(json_profile), profile::Profile {
+        assert_eq!(Profile::from(json_profile), Profile {
             username: Some("peterdn".to_string()),
             full_name: Some("Peter Nelson".to_string()),
             biography: Some("test biography".to_string()),
             external_url: Some("https://peterdn.com".to_string()),
-            profile_pic: Some(image::Image { url: "https://peterdn.com/profile.jpg".to_string() }),
+            profile_pic: Some(Image { url: "https://peterdn.com/profile.jpg".to_string() }),
             images: vec![
-                image::Image {url: "https://peterdn.com/1.jpg".to_string()},
-                image::Image {url: "https://peterdn.com/2.jpg".to_string()},
+                Image {url: "https://peterdn.com/1.jpg".to_string()},
+                Image {url: "https://peterdn.com/2.jpg".to_string()},
             ]
         });
     }
