@@ -2,7 +2,7 @@ use reqwest;
 use serde_json;
 use serde_json::Value;
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize, PartialEq)]
 pub struct JsonProfile {
     pub username: Option<String>,
     pub full_name: Option<String>,
@@ -12,17 +12,17 @@ pub struct JsonProfile {
     pub edge_owner_to_timeline_media: JsonEdgeOwnerToTimelineMedia,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize, PartialEq)]
 pub struct JsonEdgeOwnerToTimelineMedia {
     pub edges: Vec<JsonEdge>
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize, PartialEq)]
 pub struct JsonEdge {
     pub node: JsonNode
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize, PartialEq)]
 pub struct JsonNode {
     pub display_url: String
 }
@@ -45,13 +45,173 @@ fn get_profile_json_value(json_text: &str) -> Result<Value, ()> {
     if user_data_json_value.is_null() { Err(()) } else { Ok(user_data_json_value) }
 }
 
-pub fn scrape_profile(username: &str) -> Result<JsonProfile, ()> {
-    let instagram_profile_url = get_instagram_profile_url(username);
-    let response_body: String = reqwest::get(&instagram_profile_url).unwrap().text().unwrap();
-    let json_text = extract_instagram_json_text(&response_body)?;
+fn parse_profile_json(json_text: &String) -> Result<JsonProfile, ()> {
     let user_data_json_value = get_profile_json_value(&json_text)?;
     match serde_json::from_value(user_data_json_value) {
         Ok(profile) => Ok(profile),
         Err(_) => Err(())
+    }
+}
+
+pub fn scrape_profile(username: &str) -> Result<JsonProfile, ()> {
+    let instagram_profile_url = get_instagram_profile_url(username);
+    let response_body: String = reqwest::get(&instagram_profile_url).unwrap().text().unwrap();
+    let json_text = extract_instagram_json_text(&response_body)?;
+    parse_profile_json(&json_text)
+}
+
+
+mod test {
+    use scrape;
+
+    #[test]
+    fn test_extract_instagram_json_text() {
+        {
+            let nominal_body = r#"<test>
+                    window._sharedData = {"username": "peterdn"}
+                    </test>"#;
+            let nominal_json_text = scrape::extract_instagram_json_text(&nominal_body);
+            assert_eq!(nominal_json_text, Ok(r#"{"username": "peterdn"}"#.to_string()));
+        }
+
+        {
+            let nominal_body = r#"<test>
+                    window._sharedData = {"username": "peterdn", "data": {}}
+                    </test>"#;
+            let nominal_json_text = scrape::extract_instagram_json_text(&nominal_body);
+            assert_eq!(nominal_json_text, Ok(r#"{"username": "peterdn", "data": {}}"#.to_string()));
+        }
+
+        {
+            let invalid_body = r#"<test>
+                    window._sharedData = notrealjson
+                    </test>"#;
+            let invalid_json_text = scrape::extract_instagram_json_text(&invalid_body);
+            assert_eq!(invalid_json_text, Err(()));
+        }
+
+        {
+            let invalid_body = r#"<test>
+                    x = y
+                    </test>"#;
+            let invalid_json_text = scrape::extract_instagram_json_text(&invalid_body);
+            assert_eq!(invalid_json_text, Err(()));
+        }
+
+        {
+            let invalid_body = r#"<test>
+                    window._badData = {"username": "peterdn"}
+                    </test>"#;
+            let invalid_json_text = scrape::extract_instagram_json_text(&invalid_body);
+            assert_eq!(invalid_json_text, Err(()));
+        }
+    }
+
+    #[test]
+    fn test_get_profile_json_data() {
+        {
+            let nominal_json = r#"{
+                "entry_data": {
+                    "ProfilePage": [{
+                        "graphql": {
+                            "user": {
+                                "username": "peterdn",
+                                "full_name": "Peter Nelson",
+                                "biography": "test biography",
+                                "external_url": "https://peterdn.com",
+                                "profile_pic_url_hd": "https://peterdn.com/profile.jpg",
+                                "edge_owner_to_timeline_media": {
+                                    "edges": [{
+                                        "node": {"display_url": "https://peterdn.com/1.jpg"}
+                                    },{
+                                        "node": {"display_url": "https://peterdn.com/2.jpg"}
+                                    }]
+                                }
+                            }
+                        }
+                    }]
+                }
+            }"#;
+            let nominal_profile_value = scrape::parse_profile_json(&nominal_json.to_string());
+            assert_eq!(nominal_profile_value, Ok(scrape::JsonProfile {
+                username: Some("peterdn".to_string()),
+                full_name: Some("Peter Nelson".to_string()),
+                biography: Some("test biography".to_string()),
+                external_url: Some("https://peterdn.com".to_string()),
+                profile_pic_url_hd: Some("https://peterdn.com/profile.jpg".to_string()),
+                edge_owner_to_timeline_media: scrape::JsonEdgeOwnerToTimelineMedia {
+                    edges: vec![scrape::JsonEdge {
+                        node: scrape::JsonNode {display_url: "https://peterdn.com/1.jpg".to_string()}
+                    }, scrape::JsonEdge {
+                        node: scrape::JsonNode {display_url: "https://peterdn.com/2.jpg".to_string()}
+                    }]
+                }
+            }));
+        }
+
+        {
+            let empty_json = r#"{
+                "entry_data": {
+                    "ProfilePage": [{
+                        "graphql": {
+                            "user": {
+                                "username": null,
+                                "full_name": null,
+                                "biography": null,
+                                "external_url": null,
+                                "profile_pic_url_hd": null,
+                                "edge_owner_to_timeline_media": {"edges": []}
+                            }
+                        }
+                    }]
+                }
+            }"#;
+            let empty_profile_value = scrape::parse_profile_json(&empty_json.to_string());
+            assert_eq!(empty_profile_value, Ok(scrape::JsonProfile {
+                username: None,
+                full_name: None,
+                biography: None,
+                external_url: None,
+                profile_pic_url_hd: None,
+                edge_owner_to_timeline_media: scrape::JsonEdgeOwnerToTimelineMedia {
+                    edges: vec![]
+                }
+            }));
+        }
+
+        {
+            let incomplete_json = r#"{
+                "entry_data": {
+                    "ProfilePage": [{ "graphql": { "user": {
+                        "full_name": null, "biography": null, "external_url": null,
+                        "profile_pic_url_hd": null, "edge_owner_to_timeline_media": {"edges": []}
+                    }}}]
+                }
+            }"#;
+            let incomplete_profile_value = scrape::parse_profile_json(&incomplete_json.to_string());
+            assert_eq!(incomplete_profile_value, Ok(scrape::JsonProfile {
+                username: None,
+                full_name: None,
+                biography: None,
+                external_url: None,
+                profile_pic_url_hd: None,
+                edge_owner_to_timeline_media: scrape::JsonEdgeOwnerToTimelineMedia {
+                    edges: vec![]
+                }
+            }));
+        }
+
+        {
+            let incomplete_json = r#"{
+                "entry_data": {
+                    "ProfilePage": [{ "graphql": { "user": {
+                        "username": null, "full_name": null, "biography": null,
+                        "external_url": null, "profile_pic_url_hd": null
+                    }}}]
+                }
+            }"#;
+            let incomplete_profile_value = scrape::parse_profile_json(&incomplete_json.to_string());
+            assert_eq!(incomplete_profile_value, Err(()));
+        }
     }
 }
