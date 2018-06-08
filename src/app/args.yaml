@@ -1,0 +1,16 @@
+name: instagram-scraper
+version: "0.1"
+author: Peter Nelson (peter@peterdn.com)
+about: Scrapes a public instagram profile
+args:
+    - profile:
+        short: p
+        long: profile
+        help: Scrapes profile information such as name, biography, and external URL
+    - images:
+        short: i
+        long: images
+        help: Scrapes most recent images from user's profile
+    - USERNAME:
+        help: The Instagram username to scrape
+        required: true
