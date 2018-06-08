@@ -8,6 +8,7 @@ pub struct Profile {
     pub biography: Option<String>,
     pub external_url: Option<String>,
     pub profile_pic: Option<Image>,
+    pub is_private: Option<bool>,
     pub images: Vec<Image>,
 }
 
@@ -24,6 +25,7 @@ impl From<scrape::JsonProfile> for Profile {
             biography: json_profile.biography,
             external_url: json_profile.external_url,
             profile_pic: profile_pic_image,
+            is_private: json_profile.is_private,
             images
         }
     }
@@ -50,6 +52,7 @@ mod tests {
             biography: Some("test biography".to_string()),
             external_url: Some("https://peterdn.com".to_string()),
             profile_pic_url_hd: Some("https://peterdn.com/profile.jpg".to_string()),
+            is_private: Some(true),
             edge_owner_to_timeline_media: JsonEdgeOwnerToTimelineMedia {
                 edges: vec![JsonEdge {
                     node: JsonNode {display_url: "https://peterdn.com/1.jpg".to_string()}
@@ -64,6 +67,7 @@ mod tests {
             biography: Some("test biography".to_string()),
             external_url: Some("https://peterdn.com".to_string()),
             profile_pic: Some(Image { url: "https://peterdn.com/profile.jpg".to_string() }),
+            is_private: Some(true),
             images: vec![
                 Image {url: "https://peterdn.com/1.jpg".to_string()},
                 Image {url: "https://peterdn.com/2.jpg".to_string()},

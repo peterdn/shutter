@@ -9,6 +9,7 @@ pub struct JsonProfile {
     pub biography: Option<String>,
     pub external_url: Option<String>,
     pub profile_pic_url_hd: Option<String>,
+    pub is_private: Option<bool>,
     pub edge_owner_to_timeline_media: JsonEdgeOwnerToTimelineMedia,
 }
 
@@ -120,6 +121,7 @@ mod tests {
                                 "biography": "test biography",
                                 "external_url": "https://peterdn.com",
                                 "profile_pic_url_hd": "https://peterdn.com/profile.jpg",
+                                "is_private": false,
                                 "edge_owner_to_timeline_media": {
                                     "edges": [{
                                         "node": {"display_url": "https://peterdn.com/1.jpg"}
@@ -139,6 +141,7 @@ mod tests {
                 biography: Some("test biography".to_string()),
                 external_url: Some("https://peterdn.com".to_string()),
                 profile_pic_url_hd: Some("https://peterdn.com/profile.jpg".to_string()),
+                is_private: Some(false),
                 edge_owner_to_timeline_media: JsonEdgeOwnerToTimelineMedia {
                     edges: vec![JsonEdge {
                         node: JsonNode {display_url: "https://peterdn.com/1.jpg".to_string()}
@@ -173,6 +176,7 @@ mod tests {
                 biography: None,
                 external_url: None,
                 profile_pic_url_hd: None,
+                is_private: None,
                 edge_owner_to_timeline_media: JsonEdgeOwnerToTimelineMedia {
                     edges: vec![]
                 }
@@ -195,6 +199,7 @@ mod tests {
                 biography: None,
                 external_url: None,
                 profile_pic_url_hd: None,
+                is_private: None,
                 edge_owner_to_timeline_media: JsonEdgeOwnerToTimelineMedia {
                     edges: vec![]
                 }
