@@ -14,11 +14,11 @@ const EXIT_SUCCESS: i32 = 0;
 const EXIT_FAILURE: i32 = 1;
 
 fn print_profile(user_profile: &shutter::profile::Profile) {
-    println!("Username: {}", user_profile.username.as_ref().unwrap_or(&"".to_string()));
+    println!("Username: {}", user_profile.username);
     println!("Full name: {}", user_profile.full_name.as_ref().unwrap_or(&"".to_string()));
     println!("Biography:\n{}", user_profile.biography.as_ref().unwrap_or(&"".to_string()));
     println!("URL: {}", user_profile.external_url.as_ref().unwrap_or(&"".to_string()));
-    println!("Private profile: {}", user_profile.is_private.unwrap_or(false));
+    println!("Private profile: {}", user_profile.is_private);
     println!("Profile picture: {}", user_profile.profile_pic.as_ref().unwrap().url);
 }
 

@@ -4,12 +4,12 @@ use serde_json::Value;
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct JsonProfile {
-    pub username: Option<String>,
+    pub username: String,
     pub full_name: Option<String>,
     pub biography: Option<String>,
     pub external_url: Option<String>,
     pub profile_pic_url_hd: Option<String>,
-    pub is_private: Option<bool>,
+    pub is_private: bool,
     pub edge_owner_to_timeline_media: JsonEdgeOwnerToTimelineMedia,
 }
 
@@ -136,12 +136,12 @@ mod tests {
             }"#;
             let nominal_profile_value = parse_profile_json(&nominal_json.to_string());
             assert_eq!(nominal_profile_value, Ok(JsonProfile {
-                username: Some("peterdn".to_string()),
+                username: "peterdn".to_string(),
                 full_name: Some("Peter Nelson".to_string()),
                 biography: Some("test biography".to_string()),
                 external_url: Some("https://peterdn.com".to_string()),
                 profile_pic_url_hd: Some("https://peterdn.com/profile.jpg".to_string()),
-                is_private: Some(false),
+                is_private: false,
                 edge_owner_to_timeline_media: JsonEdgeOwnerToTimelineMedia {
                     edges: vec![JsonEdge {
                         node: JsonNode {display_url: "https://peterdn.com/1.jpg".to_string()}
@@ -158,11 +158,12 @@ mod tests {
                     "ProfilePage": [{
                         "graphql": {
                             "user": {
-                                "username": null,
+                                "username": "testuser",
                                 "full_name": null,
                                 "biography": null,
                                 "external_url": null,
                                 "profile_pic_url_hd": null,
+                                "is_private": false,
                                 "edge_owner_to_timeline_media": {"edges": []}
                             }
                         }
@@ -171,12 +172,12 @@ mod tests {
             }"#;
             let empty_profile_value = parse_profile_json(&empty_json.to_string());
             assert_eq!(empty_profile_value, Ok(JsonProfile {
-                username: None,
+                username: "testuser".to_string(),
                 full_name: None,
                 biography: None,
                 external_url: None,
                 profile_pic_url_hd: None,
-                is_private: None,
+                is_private: false,
                 edge_owner_to_timeline_media: JsonEdgeOwnerToTimelineMedia {
                     edges: vec![]
                 }
@@ -187,19 +188,19 @@ mod tests {
             let incomplete_json = r#"{
                 "entry_data": {
                     "ProfilePage": [{ "graphql": { "user": {
-                        "full_name": null, "biography": null, "external_url": null,
+                        "username": "testuser", "biography": null, "external_url": null, "is_private": false,
                         "profile_pic_url_hd": null, "edge_owner_to_timeline_media": {"edges": []}
                     }}}]
                 }
             }"#;
             let incomplete_profile_value = parse_profile_json(&incomplete_json.to_string());
             assert_eq!(incomplete_profile_value, Ok(JsonProfile {
-                username: None,
+                username: "testuser".to_string(),
                 full_name: None,
                 biography: None,
                 external_url: None,
                 profile_pic_url_hd: None,
-                is_private: None,
+                is_private: false,
                 edge_owner_to_timeline_media: JsonEdgeOwnerToTimelineMedia {
                     edges: vec![]
                 }

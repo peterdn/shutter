@@ -3,12 +3,12 @@ use scrape;
 
 #[derive(Debug, PartialEq)]
 pub struct Profile {
-    pub username: Option<String>,
+    pub username: String,
     pub full_name: Option<String>,
     pub biography: Option<String>,
     pub external_url: Option<String>,
     pub profile_pic: Option<Image>,
-    pub is_private: Option<bool>,
+    pub is_private: bool,
     pub images: Vec<Image>,
 }
 
@@ -47,12 +47,12 @@ mod tests {
     #[test]
     fn test_from_json_profile() {
         let json_profile = JsonProfile {
-            username: Some("peterdn".to_string()),
+            username: "peterdn".to_string(),
             full_name: Some("Peter Nelson".to_string()),
             biography: Some("test biography".to_string()),
             external_url: Some("https://peterdn.com".to_string()),
             profile_pic_url_hd: Some("https://peterdn.com/profile.jpg".to_string()),
-            is_private: Some(true),
+            is_private: true,
             edge_owner_to_timeline_media: JsonEdgeOwnerToTimelineMedia {
                 edges: vec![JsonEdge {
                     node: JsonNode {display_url: "https://peterdn.com/1.jpg".to_string()}
@@ -62,12 +62,12 @@ mod tests {
             }
         };
         assert_eq!(Profile::from(json_profile), Profile {
-            username: Some("peterdn".to_string()),
+            username: "peterdn".to_string(),
             full_name: Some("Peter Nelson".to_string()),
             biography: Some("test biography".to_string()),
             external_url: Some("https://peterdn.com".to_string()),
             profile_pic: Some(Image { url: "https://peterdn.com/profile.jpg".to_string() }),
-            is_private: Some(true),
+            is_private: true,
             images: vec![
                 Image {url: "https://peterdn.com/1.jpg".to_string()},
                 Image {url: "https://peterdn.com/2.jpg".to_string()},
