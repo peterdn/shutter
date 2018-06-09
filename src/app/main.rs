@@ -29,7 +29,7 @@ fn download_images(user_profile: &shutter::profile::Profile) {
         println!("Downloading {}...", filename);
         let image_file = File::create(filename).unwrap();
         let mut writer = BufWriter::new(image_file);
-        reqwest::get(&img.url).unwrap().copy_to(&mut writer);
+        reqwest::get(&img.url).unwrap().copy_to(&mut writer).expect("Failed to download to file");
     });
 }
 
