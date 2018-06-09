@@ -8,6 +8,7 @@ use clap::App;
 use rayon::prelude::*;
 use std::fs::File;
 use std::io::BufWriter;
+use std::path::Path;
 use std::process;
 
 const EXIT_SUCCESS: i32 = 0;
@@ -37,11 +38,18 @@ fn print_profile(user_profile: &shutter::profile::Profile) {
     );
 }
 
-fn download_images(user_profile: &shutter::profile::Profile) {
+fn download_images(user_profile: &shutter::profile::Profile, outdir: &Path) {
+    if outdir.exists() && !outdir.is_dir() {
+        panic!("A file exists with the same name as the output directory!");
+    }
+
+    std::fs::create_dir(&outdir).expect("Failed to create output directory!");
+
     println!("Downloading {} images...", user_profile.images.len());
     user_profile.images.par_iter().for_each(|ref img| {
         let filename = img.url.rsplit('/').collect::<Vec<&str>>()[0];
-        println!("Downloading {}...", filename);
+        let filename = outdir.join(filename);
+        println!("Downloading {}", filename.to_string_lossy());
         let image_file = File::create(filename).unwrap();
         let mut writer = BufWriter::new(image_file);
         reqwest::get(&img.url)
@@ -63,7 +71,9 @@ fn main() {
         }
 
         if args.is_present("images") {
-            download_images(&user_profile);
+            let default_outdir = format!("{}_images", username);
+            let outdir = Path::new(args.value_of("outdir").unwrap_or(&default_outdir));
+            download_images(&user_profile, &outdir);
         }
 
         process::exit(EXIT_SUCCESS);

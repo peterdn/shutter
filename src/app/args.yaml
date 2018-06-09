@@ -10,7 +10,13 @@ args:
     - images:
         short: i
         long: images
-        help: Scrapes most recent images from user's profile
+        help: Scrapes most recent images from user's profile and saves them to disk
+    - outdir:
+        short: o
+        long: outdir
+        help: "Output directory for saved images, which is created if it does not exist (default: <USERNAME>_images)"
+        value_name: DIRECTORY
+        takes_value: true
     - USERNAME:
         help: The Instagram username to scrape
         required: true
