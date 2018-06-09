@@ -54,7 +54,7 @@ fn get_profile_json_value(json_text: &str) -> Result<Value, ()> {
     }
 }
 
-fn parse_profile_json(json_text: &String) -> Result<JsonProfile, ()> {
+fn parse_profile_json(json_text: &str) -> Result<JsonProfile, ()> {
     let user_data_json_value = get_profile_json_value(&json_text)?;
     match serde_json::from_value(user_data_json_value) {
         Ok(profile) => Ok(profile),
