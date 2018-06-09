@@ -15,9 +15,14 @@ pub struct Profile {
 impl From<scrape::JsonProfile> for Profile {
     fn from(json_profile: scrape::JsonProfile) -> Profile {
         let profile_pic_image = json_profile.profile_pic_url_hd.map(|url| Image { url });
-        let images = json_profile.edge_owner_to_timeline_media.edges.iter().map(|ref edge| {
-            Image { url: edge.node.display_url.clone() }
-        }).collect::<Vec<Image>>();
+        let images = json_profile
+            .edge_owner_to_timeline_media
+            .edges
+            .iter()
+            .map(|ref edge| Image {
+                url: edge.node.display_url.clone(),
+            })
+            .collect::<Vec<Image>>();
 
         Profile {
             username: json_profile.username,
@@ -26,7 +31,7 @@ impl From<scrape::JsonProfile> for Profile {
             external_url: json_profile.external_url,
             profile_pic: profile_pic_image,
             is_private: json_profile.is_private,
-            images
+            images,
         }
     }
 }
@@ -54,24 +59,40 @@ mod tests {
             profile_pic_url_hd: Some("https://peterdn.com/profile.jpg".to_string()),
             is_private: true,
             edge_owner_to_timeline_media: JsonEdgeOwnerToTimelineMedia {
-                edges: vec![JsonEdge {
-                    node: JsonNode {display_url: "https://peterdn.com/1.jpg".to_string()}
-                }, JsonEdge {
-                    node: JsonNode {display_url: "https://peterdn.com/2.jpg".to_string()}
-                }]
-            }
+                edges: vec![
+                    JsonEdge {
+                        node: JsonNode {
+                            display_url: "https://peterdn.com/1.jpg".to_string(),
+                        },
+                    },
+                    JsonEdge {
+                        node: JsonNode {
+                            display_url: "https://peterdn.com/2.jpg".to_string(),
+                        },
+                    },
+                ],
+            },
         };
-        assert_eq!(Profile::from(json_profile), Profile {
-            username: "peterdn".to_string(),
-            full_name: Some("Peter Nelson".to_string()),
-            biography: Some("test biography".to_string()),
-            external_url: Some("https://peterdn.com".to_string()),
-            profile_pic: Some(Image { url: "https://peterdn.com/profile.jpg".to_string() }),
-            is_private: true,
-            images: vec![
-                Image {url: "https://peterdn.com/1.jpg".to_string()},
-                Image {url: "https://peterdn.com/2.jpg".to_string()},
-            ]
-        });
+        assert_eq!(
+            Profile::from(json_profile),
+            Profile {
+                username: "peterdn".to_string(),
+                full_name: Some("Peter Nelson".to_string()),
+                biography: Some("test biography".to_string()),
+                external_url: Some("https://peterdn.com".to_string()),
+                profile_pic: Some(Image {
+                    url: "https://peterdn.com/profile.jpg".to_string()
+                }),
+                is_private: true,
+                images: vec![
+                    Image {
+                        url: "https://peterdn.com/1.jpg".to_string(),
+                    },
+                    Image {
+                        url: "https://peterdn.com/2.jpg".to_string(),
+                    },
+                ],
+            }
+        );
     }
 }

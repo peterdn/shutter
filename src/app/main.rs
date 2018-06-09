@@ -6,8 +6,8 @@ extern crate shutter;
 
 use clap::App;
 use rayon::prelude::*;
-use std::io::BufWriter;
 use std::fs::File;
+use std::io::BufWriter;
 use std::process;
 
 const EXIT_SUCCESS: i32 = 0;
@@ -15,11 +15,26 @@ const EXIT_FAILURE: i32 = 1;
 
 fn print_profile(user_profile: &shutter::profile::Profile) {
     println!("Username: {}", user_profile.username);
-    println!("Full name: {}", user_profile.full_name.as_ref().unwrap_or(&"".to_string()));
-    println!("Biography:\n{}", user_profile.biography.as_ref().unwrap_or(&"".to_string()));
-    println!("URL: {}", user_profile.external_url.as_ref().unwrap_or(&"".to_string()));
+    println!(
+        "Full name: {}",
+        user_profile.full_name.as_ref().unwrap_or(&"".to_string())
+    );
+    println!(
+        "Biography:\n{}",
+        user_profile.biography.as_ref().unwrap_or(&"".to_string())
+    );
+    println!(
+        "URL: {}",
+        user_profile
+            .external_url
+            .as_ref()
+            .unwrap_or(&"".to_string())
+    );
     println!("Private profile: {}", user_profile.is_private);
-    println!("Profile picture: {}", user_profile.profile_pic.as_ref().unwrap().url);
+    println!(
+        "Profile picture: {}",
+        user_profile.profile_pic.as_ref().unwrap().url
+    );
 }
 
 fn download_images(user_profile: &shutter::profile::Profile) {
@@ -29,7 +44,10 @@ fn download_images(user_profile: &shutter::profile::Profile) {
         println!("Downloading {}...", filename);
         let image_file = File::create(filename).unwrap();
         let mut writer = BufWriter::new(image_file);
-        reqwest::get(&img.url).unwrap().copy_to(&mut writer).expect("Failed to download to file");
+        reqwest::get(&img.url)
+            .unwrap()
+            .copy_to(&mut writer)
+            .expect("Failed to download to file");
     });
 }
 
@@ -49,7 +67,6 @@ fn main() {
         }
 
         process::exit(EXIT_SUCCESS);
-
     } else {
         println!("User {} could not be found", username);
         process::exit(EXIT_FAILURE);
