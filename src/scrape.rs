@@ -2,7 +2,7 @@ use reqwest;
 use serde_json;
 use serde_json::Value;
 
-use error::{Result, ScrapeError};
+use error::{Result, Error};
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct JsonProfile {
@@ -36,9 +36,9 @@ fn extract_instagram_json_text(body: &str) -> Result<String> {
         .lines()
         .filter(|&line| line.contains("window._sharedData ="))
         .nth(0)
-        .ok_or(ScrapeError::ProfileDataNotFound)?;
-    let start_idx = line.find('{').ok_or(ScrapeError::ProfileDataDecodeFailed)?;
-    let end_idx = line.rfind('}').ok_or(ScrapeError::ProfileDataDecodeFailed)? + 1;
+        .ok_or(Error::ProfileDataNotFound)?;
+    let start_idx = line.find('{').ok_or(Error::ProfileDataDecodeFailed)?;
+    let end_idx = line.rfind('}').ok_or(Error::ProfileDataDecodeFailed)? + 1;
     let line = &line[start_idx..end_idx];
     Ok(line.to_string())
 }
@@ -49,10 +49,10 @@ fn get_instagram_profile_url(username: &str) -> String {
 
 fn get_profile_json_value(json_text: &str) -> Result<Value> {
     let json_data: Value =
-        serde_json::from_str(&json_text).map_err(|_err| ScrapeError::ProfileJsonParseError)?;
+        serde_json::from_str(&json_text).map_err(|_err| Error::ProfileJsonParseError)?;
     let user_data_json_value = json_data["entry_data"]["ProfilePage"][0]["graphql"]["user"].clone();
     if user_data_json_value.is_null() {
-        Err(ScrapeError::ProfileJsonInvalid)
+        Err(Error::ProfileJsonInvalid)
     } else {
         Ok(user_data_json_value)
     }
@@ -60,21 +60,21 @@ fn get_profile_json_value(json_text: &str) -> Result<Value> {
 
 fn parse_profile_json(json_text: &str) -> Result<JsonProfile> {
     let user_data_json_value = get_profile_json_value(&json_text)?;
-    serde_json::from_value(user_data_json_value).map_err(|_err| ScrapeError::ProfileJsonParseError)
+    serde_json::from_value(user_data_json_value).map_err(|_err| Error::ProfileJsonParseError)
 }
 
 fn get_response_body(mut response: reqwest::Response) -> Result<String> {
     response
         .text()
-        .map_err(|_err| ScrapeError::ResponseBodyError)
+        .map_err(|_err| Error::ResponseBodyError)
 }
 
 pub fn scrape_profile(username: &str) -> Result<JsonProfile> {
     let instagram_profile_url = get_instagram_profile_url(username);
     let response = reqwest::get(&instagram_profile_url)
-        .map_err(|_err| ScrapeError::NetworkError)?
+        .map_err(|_err| Error::NetworkError)?
         .error_for_status()
-        .map_err(|err| ScrapeError::HttpRequestError {
+        .map_err(|err| Error::HttpRequestError {
             status_code: err.status().unwrap(),
         })?;
     let response_body = get_response_body(response)?;
@@ -115,7 +115,7 @@ mod tests {
                     window._sharedData = notrealjson
                     </test>"#;
             let invalid_json_text = extract_instagram_json_text(&invalid_body);
-            assert_eq!(invalid_json_text, Err(ScrapeError::ProfileDataDecodeFailed));
+            assert_eq!(invalid_json_text, Err(Error::ProfileDataDecodeFailed));
         }
 
         {
@@ -123,7 +123,7 @@ mod tests {
                     x = y
                     </test>"#;
             let invalid_json_text = extract_instagram_json_text(&invalid_body);
-            assert_eq!(invalid_json_text, Err(ScrapeError::ProfileDataNotFound));
+            assert_eq!(invalid_json_text, Err(Error::ProfileDataNotFound));
         }
 
         {
@@ -131,7 +131,7 @@ mod tests {
                     window._badData = {"username": "peterdn"}
                     </test>"#;
             let invalid_json_text = extract_instagram_json_text(&invalid_body);
-            assert_eq!(invalid_json_text, Err(ScrapeError::ProfileDataNotFound));
+            assert_eq!(invalid_json_text, Err(Error::ProfileDataNotFound));
         }
     }
 
@@ -239,7 +239,7 @@ mod tests {
             let incomplete_profile_value = parse_profile_json(&incomplete_json.to_string());
             assert_eq!(
                 incomplete_profile_value,
-                Err(ScrapeError::ProfileJsonInvalid)
+                Err(Error::ProfileJsonInvalid)
             );
         }
 
@@ -279,7 +279,7 @@ mod tests {
             let incomplete_profile_value = parse_profile_json(&incomplete_json.to_string());
             assert_eq!(
                 incomplete_profile_value,
-                Err(ScrapeError::ProfileJsonParseError)
+                Err(Error::ProfileJsonParseError)
             );
         }
     }

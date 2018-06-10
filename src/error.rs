@@ -1,7 +1,7 @@
 use reqwest;
 
 #[derive(Debug, Fail, PartialEq)]
-pub enum ScrapeError {
+pub enum Error {
     #[fail(display = "A network error caused the request to fail")]
     NetworkError,
 
@@ -24,4 +24,4 @@ pub enum ScrapeError {
     ProfileJsonInvalid,
 }
 
-pub type Result<T> = ::std::result::Result<T, ScrapeError>;
+pub type Result<T> = ::std::result::Result<T, Error>;
