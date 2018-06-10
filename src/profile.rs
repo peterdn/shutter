@@ -94,4 +94,16 @@ mod tests {
             }
         );
     }
+
+    #[test]
+    fn test_get_instagram_profile() {
+        // Use `instagram` user as this one is likely to always exist...
+        let profile = Profile::get("instagram");
+        assert!(profile.is_ok());
+
+        let profile = profile.unwrap();
+        assert_eq!(profile.username, "instagram".to_string());
+        assert!(!profile.is_private);
+        assert_eq!(profile.images.len(), 12);
+    }
 }
