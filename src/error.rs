@@ -1,6 +1,6 @@
 use reqwest;
 
-#[derive(Debug, Fail, PartialEq)]
+#[derive(Debug, Fail)]
 pub enum Error {
     #[fail(display = "A network error caused the request to fail")]
     NetworkError,

@@ -2,7 +2,7 @@ use reqwest;
 use serde_json;
 use serde_json::Value;
 
-use error::{Result, Error};
+use error::{Error, Result};
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct JsonProfile {
@@ -64,9 +64,7 @@ fn parse_profile_json(json_text: &str) -> Result<JsonProfile> {
 }
 
 fn get_response_body(mut response: reqwest::Response) -> Result<String> {
-    response
-        .text()
-        .map_err(|_err| Error::ResponseBodyError)
+    response.text().map_err(|_err| Error::ResponseBodyError)
 }
 
 pub fn scrape_profile(username: &str) -> Result<JsonProfile> {
@@ -93,9 +91,9 @@ mod tests {
                     window._sharedData = {"username": "peterdn"}
                     </test>"#;
             let nominal_json_text = extract_instagram_json_text(&nominal_body);
-            assert_eq!(
+            assert_matches!(
                 nominal_json_text,
-                Ok(r#"{"username": "peterdn"}"#.to_string())
+                Ok(ref json) if *json == r#"{"username": "peterdn"}"#.to_string()
             );
         }
 
@@ -104,9 +102,9 @@ mod tests {
                     window._sharedData = {"username": "peterdn", "data": {}}
                     </test>"#;
             let nominal_json_text = extract_instagram_json_text(&nominal_body);
-            assert_eq!(
+            assert_matches!(
                 nominal_json_text,
-                Ok(r#"{"username": "peterdn", "data": {}}"#.to_string())
+                Ok(ref json) if *json == r#"{"username": "peterdn", "data": {}}"#.to_string()
             );
         }
 
@@ -115,7 +113,7 @@ mod tests {
                     window._sharedData = notrealjson
                     </test>"#;
             let invalid_json_text = extract_instagram_json_text(&invalid_body);
-            assert_eq!(invalid_json_text, Err(Error::ProfileDataDecodeFailed));
+            assert_matches!(invalid_json_text, Err(Error::ProfileDataDecodeFailed));
         }
 
         {
@@ -123,7 +121,7 @@ mod tests {
                     x = y
                     </test>"#;
             let invalid_json_text = extract_instagram_json_text(&invalid_body);
-            assert_eq!(invalid_json_text, Err(Error::ProfileDataNotFound));
+            assert_matches!(invalid_json_text, Err(Error::ProfileDataNotFound));
         }
 
         {
@@ -131,7 +129,7 @@ mod tests {
                     window._badData = {"username": "peterdn"}
                     </test>"#;
             let invalid_json_text = extract_instagram_json_text(&invalid_body);
-            assert_eq!(invalid_json_text, Err(Error::ProfileDataNotFound));
+            assert_matches!(invalid_json_text, Err(Error::ProfileDataNotFound));
         }
     }
 
@@ -168,9 +166,9 @@ mod tests {
                 }
             }"#;
             let nominal_profile_value = parse_profile_json(&nominal_json.to_string());
-            assert_eq!(
+            assert_matches!(
                 nominal_profile_value,
-                Ok(JsonProfile {
+                Ok(ref profile) if *profile == JsonProfile {
                     username: "peterdn".to_string(),
                     full_name: Some("Peter Nelson".to_string()),
                     biography: Some("test biography".to_string()),
@@ -193,7 +191,7 @@ mod tests {
                             },
                         ],
                     },
-                })
+                }
             );
         }
 
@@ -216,9 +214,9 @@ mod tests {
                 }
             }"#;
             let empty_profile_value = parse_profile_json(&empty_json.to_string());
-            assert_eq!(
+            assert_matches!(
                 empty_profile_value,
-                Ok(JsonProfile {
+                Ok(ref profile) if *profile == JsonProfile {
                     username: "testuser".to_string(),
                     full_name: None,
                     biography: None,
@@ -226,7 +224,7 @@ mod tests {
                     profile_pic_url_hd: None,
                     is_private: false,
                     edge_owner_to_timeline_media: JsonEdgeOwnerToTimelineMedia { edges: vec![] },
-                })
+                }
             );
         }
 
@@ -237,10 +235,7 @@ mod tests {
                 }
             }"#;
             let incomplete_profile_value = parse_profile_json(&incomplete_json.to_string());
-            assert_eq!(
-                incomplete_profile_value,
-                Err(Error::ProfileJsonInvalid)
-            );
+            assert_matches!(incomplete_profile_value, Err(Error::ProfileJsonInvalid));
         }
 
         {
@@ -253,9 +248,9 @@ mod tests {
                 }
             }"#;
             let incomplete_profile_value = parse_profile_json(&incomplete_json.to_string());
-            assert_eq!(
+            assert_matches!(
                 incomplete_profile_value,
-                Ok(JsonProfile {
+                Ok(ref profile) if *profile == JsonProfile {
                     username: "testuser".to_string(),
                     full_name: None,
                     biography: None,
@@ -263,7 +258,7 @@ mod tests {
                     profile_pic_url_hd: None,
                     is_private: false,
                     edge_owner_to_timeline_media: JsonEdgeOwnerToTimelineMedia { edges: vec![] },
-                })
+                }
             );
         }
 
@@ -277,10 +272,7 @@ mod tests {
                 }
             }"#;
             let incomplete_profile_value = parse_profile_json(&incomplete_json.to_string());
-            assert_eq!(
-                incomplete_profile_value,
-                Err(Error::ProfileJsonParseError)
-            );
+            assert_matches!(incomplete_profile_value, Err(Error::ProfileJsonParseError));
         }
     }
 }
