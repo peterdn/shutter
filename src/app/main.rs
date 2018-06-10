@@ -77,21 +77,24 @@ fn main() {
 
     let username = args.value_of("USERNAME").unwrap();
 
-    if let Ok(user_profile) = shutter::profile::Profile::get(username) {
-        if args.is_present("profile") {
-            print_profile(&user_profile);
-        }
+    match shutter::profile::Profile::get(username) {
+        Ok(user_profile) => {
+            if args.is_present("profile") {
+                print_profile(&user_profile);
+            }
 
-        if args.is_present("images") {
-            let default_outdir = format!("{}_images", username);
-            let outdir = Path::new(args.value_of("outdir").unwrap_or(&default_outdir));
-            download_images(&user_profile, &outdir);
-        }
+            if args.is_present("images") {
+                let default_outdir = format!("{}_images", username);
+                let outdir = Path::new(args.value_of("outdir").unwrap_or(&default_outdir));
+                download_images(&user_profile, &outdir);
+            }
 
-        process::exit(EXIT_SUCCESS);
-    } else {
-        println!("User {} could not be found", username);
-        process::exit(EXIT_FAILURE);
+            process::exit(EXIT_SUCCESS);
+        }
+        Err(e) => {
+            println!("{}", e);
+            process::exit(EXIT_FAILURE);
+        }
     }
 }
 

@@ -5,7 +5,10 @@ use serde_json::Value;
 #[derive(Debug, Fail, PartialEq)]
 pub enum ScrapeError {
     #[fail(display = "A network error caused the request to fail")]
-    NetworkRequestFailed,
+    NetworkError,
+
+    #[fail(display = "HTTP request failed (status code: {})", status_code)]
+    HttpRequestError { status_code: reqwest::StatusCode },
 
     #[fail(display = "Error retrieving response body")]
     ResponseBodyError,
@@ -90,8 +93,12 @@ fn get_response_body(mut response: reqwest::Response) -> Result<String, ScrapeEr
 
 pub fn scrape_profile(username: &str) -> Result<JsonProfile, ScrapeError> {
     let instagram_profile_url = get_instagram_profile_url(username);
-    let response =
-        reqwest::get(&instagram_profile_url).map_err(|_err| ScrapeError::NetworkRequestFailed)?;
+    let response = reqwest::get(&instagram_profile_url)
+        .map_err(|_err| ScrapeError::NetworkError)?
+        .error_for_status()
+        .map_err(|err| ScrapeError::HttpRequestError {
+            status_code: err.status().unwrap(),
+        })?;
     let response_body = get_response_body(response)?;
     let json_text = extract_instagram_json_text(&response_body)?;
     parse_profile_json(&json_text)
