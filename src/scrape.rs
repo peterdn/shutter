@@ -26,6 +26,7 @@ pub struct JsonEdge {
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct JsonNode {
     pub display_url: String,
+    pub taken_at_timestamp: i32,
 }
 
 fn extract_instagram_json_text(body: &str) -> Result<String, ()> {
@@ -141,9 +142,15 @@ mod tests {
                                 "is_private": false,
                                 "edge_owner_to_timeline_media": {
                                     "edges": [{
-                                        "node": {"display_url": "https://peterdn.com/1.jpg"}
+                                        "node": {
+                                            "display_url": "https://peterdn.com/1.jpg",
+                                            "taken_at_timestamp": 1200000000
+                                        }
                                     },{
-                                        "node": {"display_url": "https://peterdn.com/2.jpg"}
+                                        "node": {
+                                            "display_url": "https://peterdn.com/2.jpg",
+                                            "taken_at_timestamp": 1300000000
+                                        }
                                     }]
                                 }
                             }
@@ -166,11 +173,13 @@ mod tests {
                             JsonEdge {
                                 node: JsonNode {
                                     display_url: "https://peterdn.com/1.jpg".to_string(),
+                                    taken_at_timestamp: 1200000000,
                                 },
                             },
                             JsonEdge {
                                 node: JsonNode {
                                     display_url: "https://peterdn.com/2.jpg".to_string(),
+                                    taken_at_timestamp: 1300000000,
                                 },
                             },
                         ],

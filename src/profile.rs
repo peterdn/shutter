@@ -1,4 +1,4 @@
-use image::Image;
+use image::{PostImage, ProfileImage};
 use scrape;
 
 #[derive(Debug, PartialEq)]
@@ -7,22 +7,22 @@ pub struct Profile {
     pub full_name: Option<String>,
     pub biography: Option<String>,
     pub external_url: Option<String>,
-    pub profile_pic: Option<Image>,
+    pub profile_pic: Option<ProfileImage>,
     pub is_private: bool,
-    pub images: Vec<Image>,
+    pub images: Vec<PostImage>,
 }
 
 impl From<scrape::JsonProfile> for Profile {
     fn from(json_profile: scrape::JsonProfile) -> Profile {
-        let profile_pic_image = json_profile.profile_pic_url_hd.map(|url| Image { url });
+        let profile_pic_image = json_profile
+            .profile_pic_url_hd
+            .map(|url| ProfileImage { url });
         let images = json_profile
             .edge_owner_to_timeline_media
             .edges
             .iter()
-            .map(|ref edge| Image {
-                url: edge.node.display_url.clone(),
-            })
-            .collect::<Vec<Image>>();
+            .map(|ref edge| PostImage::new(&edge.node.display_url, edge.node.taken_at_timestamp))
+            .collect::<Vec<PostImage>>();
 
         Profile {
             username: json_profile.username,
@@ -63,11 +63,13 @@ mod tests {
                     JsonEdge {
                         node: JsonNode {
                             display_url: "https://peterdn.com/1.jpg".to_string(),
+                            taken_at_timestamp: 1200000000,
                         },
                     },
                     JsonEdge {
                         node: JsonNode {
                             display_url: "https://peterdn.com/2.jpg".to_string(),
+                            taken_at_timestamp: 1300000000,
                         },
                     },
                 ],
@@ -80,17 +82,13 @@ mod tests {
                 full_name: Some("Peter Nelson".to_string()),
                 biography: Some("test biography".to_string()),
                 external_url: Some("https://peterdn.com".to_string()),
-                profile_pic: Some(Image {
+                profile_pic: Some(ProfileImage {
                     url: "https://peterdn.com/profile.jpg".to_string()
                 }),
                 is_private: true,
                 images: vec![
-                    Image {
-                        url: "https://peterdn.com/1.jpg".to_string(),
-                    },
-                    Image {
-                        url: "https://peterdn.com/2.jpg".to_string(),
-                    },
+                    PostImage::new("https://peterdn.com/1.jpg", 1200000000),
+                    PostImage::new("https://peterdn.com/2.jpg", 1300000000),
                 ],
             }
         );
