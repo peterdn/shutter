@@ -12,6 +12,7 @@ use std::path::{Path, PathBuf};
 use std::process;
 use std::time::UNIX_EPOCH;
 
+use shutter::error::Result;
 use shutter::image::PostImage;
 
 const EXIT_SUCCESS: i32 = 0;
@@ -71,7 +72,7 @@ fn download_images(user_profile: &shutter::profile::Profile, outdir: &Path) {
     });
 }
 
-fn main() {
+fn do_main() -> Result<()> {
     let args_yaml_schema = load_yaml!("args.yaml");
     let args = App::from_yaml(args_yaml_schema).get_matches();
 
@@ -89,12 +90,19 @@ fn main() {
                 download_images(&user_profile, &outdir);
             }
 
-            process::exit(EXIT_SUCCESS);
+            Ok(())
         }
         Err(e) => {
             println!("{}", e);
-            process::exit(EXIT_FAILURE);
+            Err(e)
         }
+    }
+}
+
+fn main() -> ! {
+    match do_main() {
+        Ok(()) => process::exit(EXIT_SUCCESS),
+        _ => process::exit(EXIT_FAILURE),
     }
 }
 
