@@ -11,5 +11,6 @@ extern crate serde_json;
 
 mod scrape;
 
+pub mod error;
 pub mod image;
 pub mod profile;
