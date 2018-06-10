@@ -48,8 +48,7 @@ fn get_instagram_profile_url(username: &str) -> String {
 }
 
 fn get_profile_json_value(json_text: &str) -> Result<Value> {
-    let json_data: Value =
-        serde_json::from_str(&json_text).map_err(|_err| Error::ProfileJsonParseError)?;
+    let json_data: Value = serde_json::from_str(&json_text)?;
     let user_data_json_value = json_data["entry_data"]["ProfilePage"][0]["graphql"]["user"].clone();
     if user_data_json_value.is_null() {
         Err(Error::ProfileJsonInvalid)
@@ -60,17 +59,12 @@ fn get_profile_json_value(json_text: &str) -> Result<Value> {
 
 fn parse_profile_json(json_text: &str) -> Result<JsonProfile> {
     let user_data_json_value = get_profile_json_value(&json_text)?;
-    serde_json::from_value(user_data_json_value).map_err(|_err| Error::ProfileJsonParseError)
-}
-
-fn get_response_body(mut response: reqwest::Response) -> Result<String> {
-    response.text().map_err(|_err| Error::ResponseBodyError)
+    serde_json::from_value(user_data_json_value).map_err(|err| Error::from(err))
 }
 
 pub fn scrape_profile(username: &str) -> Result<JsonProfile> {
     let instagram_profile_url = get_instagram_profile_url(username);
-    let response = reqwest::get(&instagram_profile_url)
-        .map_err(|_err| Error::NetworkError)?
+    let mut response = reqwest::get(&instagram_profile_url)?
         .error_for_status()
         .map_err(|request_error| match request_error.status() {
             Some(reqwest::StatusCode::NotFound) => Error::UserNotFound {
@@ -78,7 +72,7 @@ pub fn scrape_profile(username: &str) -> Result<JsonProfile> {
             },
             _ => Error::HttpRequestError { request_error },
         })?;
-    let response_body = get_response_body(response)?;
+    let response_body = response.text()?;
     let json_text = extract_instagram_json_text(&response_body)?;
     parse_profile_json(&json_text)
 }

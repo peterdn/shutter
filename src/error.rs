@@ -1,4 +1,5 @@
 use reqwest;
+use serde_json;
 
 #[derive(Debug, Fail)]
 pub enum Error {
@@ -31,3 +32,15 @@ pub enum Error {
 }
 
 pub type Result<T> = ::std::result::Result<T, Error>;
+
+impl From<serde_json::Error> for Error {
+    fn from(_err: serde_json::Error) -> Error {
+        Error::ProfileJsonParseError
+    }
+}
+
+impl From<reqwest::Error> for Error {
+    fn from(_err: reqwest::Error) -> Error {
+        Error::NetworkError
+    }
+}
