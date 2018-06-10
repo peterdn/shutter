@@ -1,4 +1,6 @@
-# shutter [![Build Status](https://travis-ci.org/peterdn/shutter.svg?branch=master)](https://travis-ci.org/peterdn/shutter)
+# shutter
+
+[![Build Status](https://travis-ci.org/peterdn/shutter.svg?branch=master)](https://travis-ci.org/peterdn/shutter)
 
 An Instagram scraping library and CLI app written in Rust.
 
