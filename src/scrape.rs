@@ -72,12 +72,11 @@ pub fn scrape_profile(username: &str) -> Result<JsonProfile> {
     let response = reqwest::get(&instagram_profile_url)
         .map_err(|_err| Error::NetworkError)?
         .error_for_status()
-        .map_err(|request_error| {
-            if let Some(reqwest::StatusCode::NotFound) = request_error.status() {
-                Error::UserNotFound { username: username.to_string() }
-            } else {
-                Error::HttpRequestError { request_error }
-            }
+        .map_err(|request_error| match request_error.status() {
+            Some(reqwest::StatusCode::NotFound) => Error::UserNotFound {
+                username: username.to_string(),
+            },
+            _ => Error::HttpRequestError { request_error },
         })?;
     let response_body = get_response_body(response)?;
     let json_text = extract_instagram_json_text(&response_body)?;
