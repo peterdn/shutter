@@ -26,6 +26,8 @@ pub enum ScrapeError {
     ProfileJsonInvalid,
 }
 
+pub type Result<T> = ::std::result::Result<T, ScrapeError>;
+
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct JsonProfile {
     pub username: String,
@@ -53,7 +55,7 @@ pub struct JsonNode {
     pub taken_at_timestamp: i32,
 }
 
-fn extract_instagram_json_text(body: &str) -> Result<String, ScrapeError> {
+fn extract_instagram_json_text(body: &str) -> Result<String> {
     let line = body
         .lines()
         .filter(|&line| line.contains("window._sharedData ="))
@@ -69,7 +71,7 @@ fn get_instagram_profile_url(username: &str) -> String {
     format!("https://instagram.com/{}/", username).to_string()
 }
 
-fn get_profile_json_value(json_text: &str) -> Result<Value, ScrapeError> {
+fn get_profile_json_value(json_text: &str) -> Result<Value> {
     let json_data: Value =
         serde_json::from_str(&json_text).map_err(|_err| ScrapeError::ProfileJsonParseError)?;
     let user_data_json_value = json_data["entry_data"]["ProfilePage"][0]["graphql"]["user"].clone();
@@ -80,18 +82,18 @@ fn get_profile_json_value(json_text: &str) -> Result<Value, ScrapeError> {
     }
 }
 
-fn parse_profile_json(json_text: &str) -> Result<JsonProfile, ScrapeError> {
+fn parse_profile_json(json_text: &str) -> Result<JsonProfile> {
     let user_data_json_value = get_profile_json_value(&json_text)?;
     serde_json::from_value(user_data_json_value).map_err(|_err| ScrapeError::ProfileJsonParseError)
 }
 
-fn get_response_body(mut response: reqwest::Response) -> Result<String, ScrapeError> {
+fn get_response_body(mut response: reqwest::Response) -> Result<String> {
     response
         .text()
         .map_err(|_err| ScrapeError::ResponseBodyError)
 }
 
-pub fn scrape_profile(username: &str) -> Result<JsonProfile, ScrapeError> {
+pub fn scrape_profile(username: &str) -> Result<JsonProfile> {
     let instagram_profile_url = get_instagram_profile_url(username);
     let response = reqwest::get(&instagram_profile_url)
         .map_err(|_err| ScrapeError::NetworkError)?
