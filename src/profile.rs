@@ -37,7 +37,7 @@ impl From<scrape::JsonProfile> for Profile {
 }
 
 impl Profile {
-    pub fn get(username: &str) -> Result<Profile, ()> {
+    pub fn get(username: &str) -> Result<Profile, scrape::ScrapeError> {
         let json_profile = scrape::scrape_profile(username)?;
         Ok(Profile::from(json_profile))
     }

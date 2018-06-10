@@ -2,6 +2,27 @@ use reqwest;
 use serde_json;
 use serde_json::Value;
 
+#[derive(Debug, Fail, PartialEq)]
+pub enum ScrapeError {
+    #[fail(display = "A network error caused the request to fail")]
+    NetworkRequestFailed,
+
+    #[fail(display = "Error retrieving response body")]
+    ResponseBodyError,
+
+    #[fail(display = "Failed to find profile data")]
+    ProfileDataNotFound,
+
+    #[fail(display = "Failed to decode profile data")]
+    ProfileDataDecodeFailed,
+
+    #[fail(display = "Failed to parse profile json")]
+    ProfileJsonParseError,
+
+    #[fail(display = "Profile json data is invalid")]
+    ProfileJsonInvalid,
+}
+
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct JsonProfile {
     pub username: String,
@@ -29,14 +50,14 @@ pub struct JsonNode {
     pub taken_at_timestamp: i32,
 }
 
-fn extract_instagram_json_text(body: &str) -> Result<String, ()> {
+fn extract_instagram_json_text(body: &str) -> Result<String, ScrapeError> {
     let line = body
         .lines()
         .filter(|&line| line.contains("window._sharedData ="))
         .nth(0)
-        .ok_or(())?;
-    let start_idx = line.find('{').ok_or(())?;
-    let end_idx = line.rfind('}').ok_or(())? + 1;
+        .ok_or(ScrapeError::ProfileDataNotFound)?;
+    let start_idx = line.find('{').ok_or(ScrapeError::ProfileDataDecodeFailed)?;
+    let end_idx = line.rfind('}').ok_or(ScrapeError::ProfileDataDecodeFailed)? + 1;
     let line = &line[start_idx..end_idx];
     Ok(line.to_string())
 }
@@ -45,30 +66,33 @@ fn get_instagram_profile_url(username: &str) -> String {
     format!("https://instagram.com/{}/", username).to_string()
 }
 
-fn get_profile_json_value(json_text: &str) -> Result<Value, ()> {
-    let json_data: Value = serde_json::from_str(&json_text).unwrap();
+fn get_profile_json_value(json_text: &str) -> Result<Value, ScrapeError> {
+    let json_data: Value =
+        serde_json::from_str(&json_text).map_err(|_err| ScrapeError::ProfileJsonParseError)?;
     let user_data_json_value = json_data["entry_data"]["ProfilePage"][0]["graphql"]["user"].clone();
     if user_data_json_value.is_null() {
-        Err(())
+        Err(ScrapeError::ProfileJsonInvalid)
     } else {
         Ok(user_data_json_value)
     }
 }
 
-fn parse_profile_json(json_text: &str) -> Result<JsonProfile, ()> {
+fn parse_profile_json(json_text: &str) -> Result<JsonProfile, ScrapeError> {
     let user_data_json_value = get_profile_json_value(&json_text)?;
-    match serde_json::from_value(user_data_json_value) {
-        Ok(profile) => Ok(profile),
-        Err(_) => Err(()),
-    }
+    serde_json::from_value(user_data_json_value).map_err(|_err| ScrapeError::ProfileJsonParseError)
 }
 
-pub fn scrape_profile(username: &str) -> Result<JsonProfile, ()> {
-    let instagram_profile_url = get_instagram_profile_url(username);
-    let response_body: String = reqwest::get(&instagram_profile_url)
-        .unwrap()
+fn get_response_body(mut response: reqwest::Response) -> Result<String, ScrapeError> {
+    response
         .text()
-        .unwrap();
+        .map_err(|_err| ScrapeError::ResponseBodyError)
+}
+
+pub fn scrape_profile(username: &str) -> Result<JsonProfile, ScrapeError> {
+    let instagram_profile_url = get_instagram_profile_url(username);
+    let response =
+        reqwest::get(&instagram_profile_url).map_err(|_err| ScrapeError::NetworkRequestFailed)?;
+    let response_body = get_response_body(response)?;
     let json_text = extract_instagram_json_text(&response_body)?;
     parse_profile_json(&json_text)
 }
@@ -106,7 +130,7 @@ mod tests {
                     window._sharedData = notrealjson
                     </test>"#;
             let invalid_json_text = extract_instagram_json_text(&invalid_body);
-            assert_eq!(invalid_json_text, Err(()));
+            assert_eq!(invalid_json_text, Err(ScrapeError::ProfileDataDecodeFailed));
         }
 
         {
@@ -114,7 +138,7 @@ mod tests {
                     x = y
                     </test>"#;
             let invalid_json_text = extract_instagram_json_text(&invalid_body);
-            assert_eq!(invalid_json_text, Err(()));
+            assert_eq!(invalid_json_text, Err(ScrapeError::ProfileDataNotFound));
         }
 
         {
@@ -122,7 +146,7 @@ mod tests {
                     window._badData = {"username": "peterdn"}
                     </test>"#;
             let invalid_json_text = extract_instagram_json_text(&invalid_body);
-            assert_eq!(invalid_json_text, Err(()));
+            assert_eq!(invalid_json_text, Err(ScrapeError::ProfileDataNotFound));
         }
     }
 
@@ -224,6 +248,19 @@ mod tests {
         {
             let incomplete_json = r#"{
                 "entry_data": {
+                    "ProfilePage": []
+                }
+            }"#;
+            let incomplete_profile_value = parse_profile_json(&incomplete_json.to_string());
+            assert_eq!(
+                incomplete_profile_value,
+                Err(ScrapeError::ProfileJsonInvalid)
+            );
+        }
+
+        {
+            let incomplete_json = r#"{
+                "entry_data": {
                     "ProfilePage": [{ "graphql": { "user": {
                         "username": "testuser", "biography": null, "external_url": null, "is_private": false,
                         "profile_pic_url_hd": null, "edge_owner_to_timeline_media": {"edges": []}
@@ -255,7 +292,10 @@ mod tests {
                 }
             }"#;
             let incomplete_profile_value = parse_profile_json(&incomplete_json.to_string());
-            assert_eq!(incomplete_profile_value, Err(()));
+            assert_eq!(
+                incomplete_profile_value,
+                Err(ScrapeError::ProfileJsonParseError)
+            );
         }
     }
 }
