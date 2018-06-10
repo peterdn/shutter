@@ -97,8 +97,8 @@ fn main() {
 
 #[cfg(test)]
 mod test {
-    use std::time::{Duration, UNIX_EPOCH};
     use super::*;
+    use std::time::{Duration, UNIX_EPOCH};
 
     #[test]
     fn test_get_local_filepath_for_image() {
