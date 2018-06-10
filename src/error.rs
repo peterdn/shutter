@@ -5,8 +5,14 @@ pub enum Error {
     #[fail(display = "A network error caused the request to fail")]
     NetworkError,
 
-    #[fail(display = "HTTP request failed (status code: {})", status_code)]
-    HttpRequestError { status_code: reqwest::StatusCode },
+    #[fail(display = "HTTP request failed ({})", request_error)]
+    HttpRequestError {
+        #[cause]
+        request_error: reqwest::Error,
+    },
+
+    #[fail(display = "User `{}` was not found", username)]
+    UserNotFound { username: String },
 
     #[fail(display = "Error retrieving response body")]
     ResponseBodyError,
